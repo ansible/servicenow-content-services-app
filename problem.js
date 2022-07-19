@@ -1,37 +1,35 @@
-(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
-	
-	// Check path parameters
-	const problem_number = request.pathParams.problem_number;
-	const new_state = request.pathParams.new_state;
-	
+function getProblem(problem_number) {
 	const problem = new GlideRecord("problem");
-	// 1: Does a problem with the given number exist?
+	// Does a problem with the given number exist?
 	const problem_exists = problem.get("number", problem_number);
 
 	if (! problem_exists) {
 		// exception: no such problem
 		var msg = gs.getMessage("No problem with number {0} exists.", problem_number);
 		gs.error(msg);
-		return new sn_ws_err.NotFoundError(msg);
-	}	
-	
+		throw new sn_ws_err.NotFoundError(msg);
+	}
+	return problem;
+}
+
+function validateProblem(problem) {
 	// Is the problem record readable and writable?
 	if (! (problem.canRead() && problem.canWrite())) {
 		// exception: cannot read or write into the record
 		var msg = "Cannot read or write into a problem record";
 		gs.error(msg);
-		return new sn_ws_err.NotAcceptableError(msg);
+		throw new sn_ws_err.NotAcceptableError(msg);
 	}
 	
 	// Does problem_state and state match?
 	if (problem.state != problem.problem_state) {
 		var msg = gs.getMessage("Cannot determine the current state of problem {0}.", problem_number);
 		gs.error(msg);
-		return new sn_ws_err.ConflictError(msg);
+		throw new sn_ws_err.ConflictError(msg);
 	}
-		
-	// 3: Is the transition from the current state to the new state allowed?
-	const current_state = problem.state;
+}
+
+function validateStateTransition(current_state, new_state) {
 	const possible_state_transitions = {
 		"101": ["102"],
 		"102": ["103", "107"],
@@ -41,24 +39,35 @@
 		"107": ["103"]
 	};
 	
-	// 2: Does new_state point to a valid state?
-	if (! (new_state in possible_state_transitions)) {
-		// exception: new_state is not a valid state
-		var msg = gs.getMessage("Given state {0} is not a valid state.", new_state);
+	// Is current state valid?
+	if (! (current_state in possible_state_transitions)) {
+		var err = new sn_ws_err.ServiceError();
+		err.setStatus(500);
+		var msg = gs.getMessage("Current state is not valid.");
+		err.setMessage(msg);
 		gs.error(msg);
-		return new sn_ws_err.BadRequestError(msg);
+		throw err;
 	}
 	
+	// Is new state valid?
+	if (! (new_state in possible_state_transitions)) {
+		// exception: new_state is not a valid state
+		var msg = gs.getMessage("Given new state {0} is not a valid state.", new_state);
+		gs.error(msg);
+		throw new sn_ws_err.BadRequestError(msg);
+	}
+	
+	// Is the transition from the current state to the new state allowed?
 	if (possible_state_transitions[current_state].indexOf(new_state) == -1) {
 		// exception: transition from current state to the new state is not allowed
 		var msg = gs.getMessage("Problem state transition from state {0} to {1} is not possible.", [current_state, new_state]);
 		gs.error(msg);
-		return new sn_ws_err.BadRequestError(msg);
+		throw new sn_ws_err.BadRequestError(msg);
 	}
-	
-	// Check request body parameters
-	
-	// 1: Does the request supply all the required fields?
+}
+
+function validateSuppliedFields(problem, new_state, body_data) {
+	// Does the request supply all the required fields?
 	const state_required_new_fields = {
 		"101": ["short_description"],
 		"102": ["assigned_to"],
@@ -69,10 +78,10 @@
 	};
 	
 	const resolution_code_required_fields = {
-		"fix_applied": ["cause_notes", "fix_notes"],
+		"fix_applied"  : ["cause_notes", "fix_notes"],
 		"risk_accepted": ["cause_notes", "close_notes"],
-		"canceled": ["close_notes"],
-		"duplicate": ["duplicate_of"]
+		"canceled"     : ["close_notes"],
+		"duplicate"    : ["duplicate_of"]
 	};
 	
 	var sorted_states = [];
@@ -80,45 +89,56 @@
 		sorted_states.push(state);
 	}
 	sorted_states.sort();
-			
+	
 	var all_required_fields = [];
 	for (var i in sorted_states) {
 		var state = sorted_states[i];
-		fields = state_required_new_fields[state];
+		var fields = state_required_new_fields[state];
 		all_required_fields = all_required_fields.concat(fields);
-		if (state === new_state) {
+		if (state == new_state) {
 			break;
 		}
 	}
 	
-	// 2: Does the target problem state contain all the required fields?
-	const body_data = request.body.data;
+	// Does the new problem state contain all the required fields?
 	while (all_required_fields.length > 0) {
 		var field = all_required_fields.pop();
-		if (gs.nil(field)) {
+		if (field === undefined) { 
 			// Not sure why field can be nil!!!
-			continue;
+			throw new sn_ws_err.BadRequestError("field is undefined");
+		}
+		if (gs.nil(field)) {
+			throw new sn_ws_err.BadRequestError("field is null");
+		}
+		
+		var value;
+		if (field in problem) {
+			value = problem.getElement(field);
+		}
+		if (field in body_data) {
+			value = body_data[field];
+		}
+		
+		if (value === undefined || gs.nil(value)) {
+			var msg = gs.getMessage("Missing field {0}.", field);
+			gs.error(msg);
+			throw new sn_ws_err.BadRequestError(msg);
 		}
 				
-		var value = problem.getElement(field);
-		if (gs.nil(value)) {
-			value = body_data[field];
-			if (gs.nil(value)) {
-				var msg = gs.getMessage("Missing field {0}.", field);
-				gs.error(msg);
-				return new sn_ws_err.BadRequestError(msg);
-			}
-		}
 		if (field == "resolution_code") {
 			// check that the value is set to one of the valid resolution codes
 			// value is not nil here
 			if (! (value in resolution_code_required_fields)) {
-				return new sn_ws_err.BadRequestError(gs.getMessage("resolution_code is set to {0}, which is not a valid value.", value));
+				var msg = gs.getMessage("resolution_code is set to {0}, which is not a valid value.", value);
+				gs.error(msg);
+				throw new sn_ws_err.BadRequestError(msg);
 			}
 			all_required_fields = all_required_fields.concat(resolution_code_required_fields[value]);
 		}
 	}
-	
+}
+
+function assignSuppliedFields(problem, body_data) {
 	// Everything looks good. Update the supplemented fields
 	for (var field in body_data) {
 		if (! field in problem) {
@@ -127,43 +147,51 @@
 			// ignore error
 			continue;
 		}
-		if (! gs.nil(body_data[field])) {
+		var value = body_data[field];
+		if (! gs.nil(value)) {
 			if (! problem.getElement(field).canWrite()) {
-				// TODO: Should we silently fail instead?
 				var msg = gs.getMessage("Cannot write to field {0}.", field);
-				gs.error(msg);
+				gs.warn(msg);
 				// Can we just ignore it? We should.
-				// return sn_ws_err.BadRequestError(msg);
+				// throw new sn_ws_err.BadRequestError(msg);
 			}
-			problem.setValue(field, body_data[field]);
+			problem.setValue(field, value);
 		}
 	}
-	
+}
+
+function transitionProblemState(problem, new_state) {
 	// Change the state
 	problem.setValue("state", new_state);
 	problem.setValue("problem_state", new_state);
-	
-	if (! problem.update()) {
+}
+
+function updateProblemRecord(problem) {
+	if (! problem.update("State transition")) {
 		// exception: could not update record
-		var msg = gs.getMessage("Cannot update problem record number {0}.", problem_number);
+		var msg = gs.getMessage("Cannot update problem record number {0}.", problem.number);
 		gs.error(msg);
-		return new sn_ws_err.BadRequestError(msg);
+		throw new sn_ws_err.BadRequestError(msg);
+	}
+}
+
+function buildResponse(problem, query_params) {
+	var display_value = "false";
+	if ("sysparm_display_value" in query_params) {
+		display_value = String(query_params.sysparm_display_value || "false");
+		display_value = display_value.toLowerCase();
 	}
 	
-	// Return the updated problem record
-	var display_value = "false";
-	if ("sysparm_display_value" in request.queryParams) {
-		display_value = request.queryParams.sysparm_display_value; // FIXME: should be converted to lower case
-	}
 	var result = {};
+	var msgs = [];
 	for (var i in problem.getElements()) {
 		var element = problem.getElements()[i];
-		// TODO: handle display value correctly
+		
 		var value = "";
-		if (display_value === "true") {
+		if (display_value == "true") {
 			value = element.getDisplayValue();
 		}
-		else if (display_value === "all") {
+		else if (display_value == "all") {
 			value = {
 				"display_value": element.getDisplayValue(),
 				"value": element.toString()
@@ -175,5 +203,31 @@
 			
 		result[element.getName()] = value;
 	}
-	response.setBody(result); // FIXME: Besides display_valueshould we take into account queryParams?????
+	
+	return result;
+}
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+	// Get and validate
+	const problem_number = String(request.pathParams.problem_number || "");
+	
+	const problem = getProblem(problem_number);
+	validateProblem(problem);
+	
+	const current_state = problem.state.toString();
+	const new_state = String(request.pathParams.new_state || "");
+	
+	validateStateTransition(current_state, new_state);
+	
+	const body_data = request.body.data;
+	validateSuppliedFields(problem, new_state, body_data);
+	
+	// Assign new values
+	assignSuppliedFields(problem, body_data);
+	transitionProblemState(problem, new_state);
+	updateProblemRecord(problem);
+	
+	// Prepare the result
+	var result = buildResponse(problem, request.queryParams);
+	response.setBody(result); // FIXME: Besides display_value should we take into account other queryParams?
 })(request, response);
