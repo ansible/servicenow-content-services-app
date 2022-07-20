@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+SN_HOST="https://devxxxx.service-now.com"
+SN_USER="admin"
+SN_PASSWORD="passwd"
+SN_PST="x_733499_ansible/ansible_problem"
