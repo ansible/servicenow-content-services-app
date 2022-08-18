@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-source ./config.sh
-source ./definitions.sh
+source definitions.sh
 
 # Create a new problem
 p_number=$(create_problem "A new problem from curl")
