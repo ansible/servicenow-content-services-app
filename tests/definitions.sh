@@ -18,7 +18,7 @@ sn_request() {
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
         --user "${SN_USER}:${SN_PASSWORD}" \
-        "${SN_HOST}/api/${uri}"
+        "${SN_HOST}${uri}"
 }
 
 sn_request_with_payload() {
@@ -31,7 +31,7 @@ sn_request_with_payload() {
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
         --user "${SN_USER}:${SN_PASSWORD}" \
-        "${SN_HOST}/api/${uri}" \
+        "${SN_HOST}${uri}" \
         --data "$payload"
 }
 
@@ -64,28 +64,28 @@ sn_table_get() {
     local fields="$2"
     local query="$3"
 
-    sn_get "now/table/${table_name}?sysparm_fields=${fields}&sysparm_query=${query}"
+    sn_get "/api/now/table/${table_name}?sysparm_fields=${fields}&sysparm_query=${query}"
 }
 
 sn_table_post() {
     local table_name="$1"
     local payload="$2"
 
-    sn_post_or_patch "POST" "now/table/${table_name}" "$payload"
+    sn_post_or_patch "POST" "/api/now/table/${table_name}" "$payload"
 }
 
 sn_table_patch() {
     local table_name="$1"
     local payload="$2"
 
-    sn_post_or_patch "PATCH" "now/table/${table_name}" "$payload"
+    sn_post_or_patch "PATCH" "/api/now/table/${table_name}" "$payload"
 }
 
 sn_table_delete() {
     local table_name="$1"
     local sys_id="$2"
 
-    sn_delete "now/table/${table_name}/${sys_id}"
+    sn_delete "/api/now/table/${table_name}/${sys_id}"
 }
 
 get_problem_by_number() {
