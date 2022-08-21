@@ -66,7 +66,7 @@ function validateStateTransition(current_state, new_state) {
     }
 }
 
-function validateMandatoryFields(problem, new_state, body_data) {
+function validateMandatoryFields(problem, current_state, new_state, body_data) {
     // Does the request supply all the required fields?
     const state_required_new_fields = {
         "101": ["short_description"],
@@ -90,15 +90,23 @@ function validateMandatoryFields(problem, new_state, body_data) {
     }
     sorted_states.sort();
 
-    var all_required_fields = [];
+    var target_state = new_state;
+	if (new_state == "107")
+		target_state = current_state;
+	
+	var all_required_fields = [];
+	
     for (var i in sorted_states) {
         var state = sorted_states[i];
         var fields = state_required_new_fields[state];
         all_required_fields = all_required_fields.concat(fields);
-        if (state == new_state) {
+        if (state == target_state) {
             break;
         }
     }
+	
+	if (new_state == "107")
+		all_required_fields.push("resolution_code");
 
     // Does the new problem state contain all the required fields?
     while (all_required_fields.length > 0) {
@@ -112,7 +120,7 @@ function validateMandatoryFields(problem, new_state, body_data) {
             value = body_data[field];
         }
 
-        if (value === undefined || gs.nil(value)) {
+        if (gs.nil(value)) {
             var msg = gs.getMessage("Missing field {0}.", field);
             gs.error(msg);
             throw new sn_ws_err.BadRequestError(msg);
@@ -283,7 +291,7 @@ function buildResponse(problem, query_params) {
     validateStateTransition(current_state, new_state);
 
     const body_data = request.body.data;
-    validateMandatoryFields(problem, new_state, body_data);
+    validateMandatoryFields(problem, current_state, new_state, body_data);
 
     // Assign new values
     assignSuppliedFields(problem, body_data);
