@@ -139,6 +139,20 @@ function validateMandatoryFields(problem, current_state, new_state, body_data) {
     }
 }
 
+function checkAssignee(user_value) {
+	var user = new GlideRecord("sys_user");
+	var user_exists = user.get("sys_id", user_value);
+	if (! user_exists) {
+		user_exists = user.get("user_name", user_value);
+		if (! user_exists) {
+			var msg = gs.getMessage("No assignee found with sys_id or user_name matching {0}.", user_value);
+			gs.error(msg);
+			throw new sn_ws_err.NotFoundError(msg);
+		}
+	}
+	return user.getValue("sys_id");
+}
+
 function assignSuppliedFields(problem, body_data) {
     // Everything looks good. Update the supplemented fields
     for (var field in body_data) {
@@ -150,6 +164,10 @@ function assignSuppliedFields(problem, body_data) {
         }
         var value = body_data[field];
         if (!gs.nil(value)) {
+			if (field == "assigned_to") {
+				value = checkAssignee(value);
+			}
+			
             if (!problem.getElement(field).canWrite()) {
                 var msg = gs.getMessage("Cannot write to field {0}.", field);
 				// Despite looking as an error, we can still write to the record
@@ -163,7 +181,6 @@ function assignSuppliedFields(problem, body_data) {
 function transitionProblemState(problem, new_state) {
     // Change the state
     problem.setValue("state", new_state);
-    problem.setValue("problem_state", new_state);
 }
 
 function updateProblemRecord(problem) {
