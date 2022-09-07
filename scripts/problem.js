@@ -66,6 +66,21 @@ function validateStateTransition(current_state, new_state) {
     }
 }
 
+function restrictFields(body_data) {
+	// Restrict fields that can be passed in request body to those that are validated
+	const allowed_fields = [
+		"assigned_to", "resolution_code", "short_description",
+		"fix_notes", "cause_notes", "close_notes", "duplicate_of"
+	];
+	
+	for (var field in body_data) {
+		if (allowed_fields.indexOf(field) == -1) {
+			var msg = gs.getMessage("Field {0} is not allowed. Fields to be set in body are restricted to [{1}].", [field, allowed_fields.join(", ")]);
+			throw new sn_ws_err.BadRequestError(msg);
+		}
+	}
+}
+
 function validateMandatoryFields(problem, current_state, new_state, body_data) {
     // Does the request supply all the required fields?
     const state_required_new_fields = {
@@ -139,18 +154,39 @@ function validateMandatoryFields(problem, current_state, new_state, body_data) {
     }
 }
 
-function checkAssignee(user_value) {
+function checkAssignee(assigned_to) {
 	var user = new GlideRecord("sys_user");
-	var user_exists = user.get("sys_id", user_value);
+	var user_exists = user.get("sys_id", assigned_to);
 	if (! user_exists) {
-		user_exists = user.get("user_name", user_value);
+		user_exists = user.get("user_name", assigned_to);
 		if (! user_exists) {
-			var msg = gs.getMessage("No assignee found with sys_id or user_name matching {0}.", user_value);
+			var msg = gs.getMessage("No assignee found with sys_id or user_name matching {0}.", assigned_to);
 			gs.error(msg);
 			throw new sn_ws_err.NotFoundError(msg);
 		}
 	}
 	return user.getValue("sys_id");
+}
+
+function checkDuplicate(duplicate_of, problem) {
+	var duplicate = new GlideRecord("problem");
+	var duplicate_exists = duplicate.get("sys_id", duplicate_of);
+	if (! duplicate_exists) {
+		duplicate_exists = duplicate.get("number", duplicate_of);
+		if (! duplicate_exists) {
+			var msg = gs.getMessage("No problem found with sys_id or number {0} for field duplicate_of.", duplicate_of);
+			gs.error(msg);
+			throw new sn_ws_err.NotFoundError(msg);
+		}
+	}
+	
+	if (duplicate.getValue("sys_id") == problem.getValue("sys_id")) {
+		var msg = gs.getMessage("Problem cannot be marked as a self-duplicate.");
+		gs.error(msg);
+		throw new sn_ws_err.BadRequestError(msg);
+	}
+	
+	return duplicate.getValue("sys_id");
 }
 
 function assignSuppliedFields(problem, body_data) {
@@ -166,6 +202,9 @@ function assignSuppliedFields(problem, body_data) {
         if (!gs.nil(value)) {
 			if (field == "assigned_to") {
 				value = checkAssignee(value);
+			}
+			else if (field == "duplicate_of") {
+				value = checkDuplicate(value, problem);
 			}
 			
             if (!problem.getElement(field).canWrite()) {
@@ -309,6 +348,7 @@ function buildResponse(problem, query_params) {
 
     const body_data = request.body.data;
     validateMandatoryFields(problem, current_state, new_state, body_data);
+	restrictFields(body_data);
 
     // Assign new values
     assignSuppliedFields(problem, body_data);
