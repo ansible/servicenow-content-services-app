@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>bfbf55af1be19550b76a0d0fdc4bcb01</enforce_acl>
+        <http_method>PATCH</http_method>
+        <name>update</name>
+        <operation_script><![CDATA[function getProblem(problem_number) {
+    const problem = new GlideRecord("problem");
+    // Does a problem with the given number exist?
+    const problem_exists = problem.get("number", problem_number);
+
+    if (!problem_exists) {
+        // exception: no such problem
+        var msg = gs.getMessage("No problem with number {0} exists.", problem_number);
+        gs.error(msg);
+        throw new sn_ws_err.NotFoundError(msg);
+    }
+    return problem;
+}
+
+function validateProblem(problem) {
+    // Is the problem record readable and writable?
+    if (!(problem.canRead() && problem.canWrite())) {
+        // exception: cannot read or write into the record
+        var msg = "Cannot read or write into a problem record";
+        gs.error(msg);
+        throw new sn_ws_err.NotAcceptableError(msg);
+    }
+
+    // Does problem_state and state match?
+    if (problem.state != problem.problem_state) {
+        var msg = gs.getMessage("Cannot determine the current state of problem {0}.", problem_number);
+        gs.error(msg);
+        throw new sn_ws_err.ConflictError(msg);
+    }
+}
+
+function validateStateTransition(current_state, new_state) {
+    const possible_state_transitions = {
+        "101": ["102"],
+        "102": ["103", "107"],
+        "103": ["104", "106", "107"],
+        "104": ["103", "106", "107"],
+        "106": ["103", "107"],
+        "107": ["103"]
+    };
+
+    // Is current state valid?
+    if (!(current_state in possible_state_transitions)) {
+        var err = new sn_ws_err.ServiceError();
+        err.setStatus(500);
+        var msg = gs.getMessage("Current state is not valid.");
+        err.setMessage(msg);
+        gs.error(msg);
+        throw err;
+    }
+
+    // Is new state valid?
+    if (!(new_state in possible_state_transitions)) {
+        // exception: new_state is not a valid state
+        var msg = gs.getMessage("Given new state {0} is not a valid state.", new_state);
+        gs.error(msg);
+        throw new sn_ws_err.BadRequestError(msg);
+    }
+
+    // Is the transition from the current state to the new state allowed?
+    if (possible_state_transitions[current_state].indexOf(new_state) == -1) {
+        // exception: transition from current state to the new state is not allowed
+        var msg = gs.getMessage("Problem state transition from state {0} to {1} is not possible.", [current_state, new_state]);
+        gs.error(msg);
+        throw new sn_ws_err.BadRequestError(msg);
+    }
+}
+
+function restrictFields(body_data) {
+	// Restrict fields that can be passed in request body to those that are validated
+	const allowed_fields = [
+		"assigned_to", "resolution_code", "short_description",
+		"fix_notes", "cause_notes", "close_notes", "duplicate_of"
+	];
+	
+	for (var field in body_data) {
+		if (allowed_fields.indexOf(field) == -1) {
+			var msg = gs.getMessage("Field {0} is not allowed. Fields to be set in body are restricted to [{1}].", [field, allowed_fields.join(", ")]);
+			throw new sn_ws_err.BadRequestError(msg);
+		}
+	}
+}
+
+function validateMandatoryFields(problem, current_state, new_state, body_data) {
+    // Does the request supply all the required fields?
+    const state_required_new_fields = {
+        "101": ["short_description"],
+        "102": ["assigned_to"],
+        "103": [],
+        "104": ["fix_notes", "cause_notes"],
+        "106": ["resolution_code"],
+        "107": []
+    };
+
+    const resolution_code_required_fields = {
+        "fix_applied": ["cause_notes", "fix_notes"],
+        "risk_accepted": ["cause_notes", "close_notes"],
+        "canceled": ["close_notes"],
+        "duplicate": ["duplicate_of"]
+    };
+
+    var sorted_states = [];
+    for (var state in state_required_new_fields) {
+        sorted_states.push(state);
+    }
+    sorted_states.sort();
+
+    var target_state = new_state;
+	if (new_state == "107")
+		target_state = current_state;
+	
+	var all_required_fields = [];
+	
+    for (var i in sorted_states) {
+        var state = sorted_states[i];
+        var fields = state_required_new_fields[state];
+        all_required_fields = all_required_fields.concat(fields);
+        if (state == target_state) {
+            break;
+        }
+    }
+	
+	if (new_state == "107")
+		all_required_fields.push("resolution_code");
+
+    // Does the new problem state contain all the required fields?
+    while (all_required_fields.length > 0) {
+        var field = all_required_fields.pop();
+        
+        var value;
+        if (field in problem) {
+            value = problem.getElement(field);
+        }
+        if (field in body_data) {
+            value = body_data[field];
+        }
+
+        if (gs.nil(value)) {
+            var msg = gs.getMessage("Missing field {0}.", field);
+            gs.error(msg);
+            throw new sn_ws_err.BadRequestError(msg);
+        }
+
+        if (field == "resolution_code") {
+            // check that the value is set to one of the valid resolution codes
+            // value is not nil here
+            if (!(value in resolution_code_required_fields)) {
+                var msg = gs.getMessage("resolution_code is set to {0}, which is not a valid value.", value);
+                gs.error(msg);
+                throw new sn_ws_err.BadRequestError(msg);
+            }
+            all_required_fields = all_required_fields.concat(resolution_code_required_fields[value]);
+        }
+    }
+}
+
+function checkAssignee(assigned_to) {
+	var user = new GlideRecord("sys_user");
+	var user_exists = user.get("sys_id", assigned_to);
+	if (! user_exists) {
+		user_exists = user.get("user_name", assigned_to);
+		if (! user_exists) {
+			var msg = gs.getMessage("No assignee found with sys_id or user_name matching {0}.", assigned_to);
+			gs.error(msg);
+			throw new sn_ws_err.NotFoundError(msg);
+		}
+	}
+	return user.getValue("sys_id");
+}
+
+function checkDuplicate(duplicate_of, problem) {
+	var duplicate = new GlideRecord("problem");
+	var duplicate_exists = duplicate.get("sys_id", duplicate_of);
+	if (! duplicate_exists) {
+		duplicate_exists = duplicate.get("number", duplicate_of);
+		if (! duplicate_exists) {
+			var msg = gs.getMessage("No problem found with sys_id or number {0} for field duplicate_of.", duplicate_of);
+			gs.error(msg);
+			throw new sn_ws_err.NotFoundError(msg);
+		}
+	}
+	
+	if (duplicate.getValue("sys_id") == problem.getValue("sys_id")) {
+		var msg = gs.getMessage("Problem cannot be marked as a self-duplicate.");
+		gs.error(msg);
+		throw new sn_ws_err.BadRequestError(msg);
+	}
+	
+	return duplicate.getValue("sys_id");
+}
+
+function assignSuppliedFields(problem, body_data) {
+    // Everything looks good. Update the supplemented fields
+    for (var field in body_data) {
+        if (!field in problem) {
+            // exception: invalid field
+            gs.warn(gs.getMessage("Invalid problem field {0}.", field));
+            // ignore error
+            continue;
+        }
+        var value = body_data[field];
+        if (!gs.nil(value)) {
+			if (field == "assigned_to") {
+				value = checkAssignee(value);
+			}
+			else if (field == "duplicate_of") {
+				value = checkDuplicate(value, problem);
+			}
+			
+            if (!problem.getElement(field).canWrite()) {
+                var msg = gs.getMessage("Cannot write to field {0}.", field);
+				// Despite looking as an error, we can still write to the record
+                gs.warn(msg);
+            }
+            problem.setValue(field, value);
+        }
+    }
+}
+
+function transitionProblemState(problem, new_state) {
+    // Change the state
+    problem.setValue("state", new_state);
+}
+
+function updateProblemRecord(problem) {
+    if (!problem.update("State transition")) {
+        // exception: could not update record
+        var msg = gs.getMessage("Cannot update problem record number {0}.", problem.number);
+        gs.error(msg);
+        throw new sn_ws_err.BadRequestError(msg);
+    }
+}
+
+function getURLFromReferenceTable(ref_table, value) {
+	var url = gs.getProperty("glide.servlet.uri");
+	url = url + "api/now/table/";
+	url = url + ref_table;
+	url = url + "/" + value;
+	return url;
+}
+
+function getLink(element, value) {
+	var link = "";
+	if (!gs.nil(element)) {
+		var ed = element.getED();
+		if (!gs.nil(ed)) {
+			if ("reference" == ed.getInternalType()) {
+				link = getURLFromReferenceTable(element.getReferenceTable(), value);
+			}	
+		}
+	}
+	return link;
+}
+
+function buildResponse(problem, query_params) {
+    var display_value_param = "false";
+    if ("sysparm_display_value" in query_params) {
+        display_value_param = String(query_params.sysparm_display_value || "false");
+        display_value_param = display_value_param.toLowerCase();
+    }
+	
+	var exclude_reference_link = false;
+	if ("sysparm_exclude_reference_link" in query_params) {
+		exclude_reference_link = Boolean(query_params.sysparm_exclude_reference_link || "false");
+	}
+	
+	var fields = [];
+	if ("sysparm_fields" in query_params) {
+		fields = String(query_params.sysparm_fields || "").split(",");
+	}
+	var out_fields;
+	if (fields.length == 0) {
+		out_fields = [];
+		for (var f in problem) {
+			out_fields.push(f);
+		}
+	}
+	else {
+		out_fields = fields;
+	}
+	
+	var result = {};
+    for (var i in out_fields) {
+        var field = out_fields[i];
+		
+		var value = problem.getValue(field);
+		var display_value = problem.getDisplayValue(field);
+		var link;
+		var field_value;
+		
+		if (!exclude_reference_link) {
+			link = getLink(problem.getElement(field), value);
+		}
+		
+		if (gs.nil(link)) {
+			if (display_value_param == "true") {
+				field_value = {
+					"display_value": display_value
+				};
+			} else if (display_value_param == "all") {
+				field_value = {
+					"display_value": display_value,
+					"value": value
+				};
+			} else {
+				field_value = value;
+			}
+		}
+		else {
+			if (display_value_param == "all") {
+				field_value = {
+					"display_value": display_value,
+					"link": link,
+					"value": value
+				};
+			}
+			else if (display_value_param == "true") {
+				field_value = {
+					"display_value": display_value,
+					"link": link
+				};
+			}
+			else {
+				field_value = {
+					"link": link,
+					"value": value
+				};
+			}
+		}
+		
+        result[field] = field_value;
+    }
+
+    return result;
+}
+
+(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // Get and validate
+    const problem_number = String(request.pathParams.problem_number || "");
+
+    const problem = getProblem(problem_number);
+    validateProblem(problem);
+
+    const current_state = problem.state.toString();
+    const new_state = String(request.pathParams.new_state || "");
+
+    validateStateTransition(current_state, new_state);
+
+    const body_data = request.body.data;
+    validateMandatoryFields(problem, current_state, new_state, body_data);
+	restrictFields(body_data);
+
+    // Assign new values
+    assignSuppliedFields(problem, body_data);
+    transitionProblemState(problem, new_state);
+    updateProblemRecord(problem);
+
+    // Prepare the result
+    var result = buildResponse(problem, request.queryParams);
+    response.setBody(result);
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_rhtpp_ansible/problem/{problem_number}/new_state/{new_state}</operation_uri>
+        <produces>application/json</produces>
+        <produces_customized>true</produces_customized>
+        <relative_path>/{problem_number}/new_state/{new_state}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>jure</sys_created_by>
+        <sys_created_on>2022-06-16 05:15:29</sys_created_on>
+        <sys_id>3fe3c47a1bcc5510b76a0d0fdc4bcbbb</sys_id>
+        <sys_mod_count>14</sys_mod_count>
+        <sys_name>update</sys_name>
+        <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
+        <sys_update_name>sys_ws_operation_3fe3c47a1bcc5510b76a0d0fdc4bcbbb</sys_update_name>
+        <sys_updated_by>jure</sys_updated_by>
+        <sys_updated_on>2022-09-05 14:00:30</sys_updated_on>
+        <web_service_definition display_value="problem">2483807a1bcc5510b76a0d0fdc4bcb78</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

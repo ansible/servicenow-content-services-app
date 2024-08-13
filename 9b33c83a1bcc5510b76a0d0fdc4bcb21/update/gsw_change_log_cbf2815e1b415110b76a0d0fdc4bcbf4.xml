@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="gsw_change_log">
+    <gsw_change_log action="INSERT_OR_UPDATE">
+        <change_date>2022-08-03 13:36:00</change_date>
+        <changed_by display_value="">55d251541bcc9110b76a0d0fdc4bcb63</changed_by>
+        <content display_value="Virtual Agent for PPM*">55f340d5db5f545048cdd3fa5e96192e</content>
+        <related_change_log_entry/>
+        <related_task_entry/>
+        <sys_class_name>gsw_change_log</sys_class_name>
+        <sys_created_by>jure</sys_created_by>
+        <sys_created_on>2022-08-03 13:36:00</sys_created_on>
+        <sys_id>cbf2815e1b415110b76a0d0fdc4bcbf4</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>2022-08-03 13:36:00</sys_name>
+        <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
+        <sys_update_name>gsw_change_log_cbf2815e1b415110b76a0d0fdc4bcbf4</sys_update_name>
+        <sys_updated_by>jure</sys_updated_by>
+        <sys_updated_on>2022-08-03 13:36:00</sys_updated_on>
+        <type>4</type>
+    </gsw_change_log>
+</record_update>
