@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_user_role">
+    <sys_user_role action="INSERT_OR_UPDATE">
+        <assignable_by/>
+        <can_delegate>true</can_delegate>
+        <description>Role required for users accessing scripted REST API resource and endpoint for API for Red Hat Ansible Automation Platform Certified Content Collection.</description>
+        <elevated_privilege>false</elevated_privilege>
+        <grantable>true</grantable>
+        <includes_roles/>
+        <name>x_rhtpp_ansible.update_problem</name>
+        <scoped_admin>false</scoped_admin>
+        <suffix>update_problem</suffix>
+        <sys_class_name>sys_user_role</sys_class_name>
+        <sys_created_by>jure</sys_created_by>
+        <sys_created_on>2022-09-01 09:24:22</sys_created_on>
+        <sys_id>356f9d6f1be19550b76a0d0fdc4bcbfe</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_rhtpp_ansible.update_problem</sys_name>
+        <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
+        <sys_update_name>sys_user_role_356f9d6f1be19550b76a0d0fdc4bcbfe</sys_update_name>
+        <sys_updated_by>jure</sys_updated_by>
+        <sys_updated_on>2022-09-01 09:24:22</sys_updated_on>
+    </sys_user_role>
+</record_update>

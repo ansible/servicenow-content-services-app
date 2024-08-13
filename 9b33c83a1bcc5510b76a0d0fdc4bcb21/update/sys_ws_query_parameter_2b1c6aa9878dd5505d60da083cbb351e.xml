@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_query_parameter">
+    <sys_ws_query_parameter action="INSERT_OR_UPDATE">
+        <example_value>all</example_value>
+        <name>sysparm_display_value</name>
+        <required>false</required>
+        <short_description>Return field display values (true), actual values (false), or both (all).</short_description>
+        <sys_class_name>sys_ws_query_parameter</sys_class_name>
+        <sys_created_by>jure</sys_created_by>
+        <sys_created_on>2022-08-01 13:21:50</sys_created_on>
+        <sys_id>2b1c6aa9878dd5505d60da083cbb351e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>sysparm_display_value</sys_name>
+        <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
+        <sys_update_name>sys_ws_query_parameter_2b1c6aa9878dd5505d60da083cbb351e</sys_update_name>
+        <sys_updated_by>jure</sys_updated_by>
+        <sys_updated_on>2022-08-01 13:21:50</sys_updated_on>
+        <web_service_definition display_value="problem">2483807a1bcc5510b76a0d0fdc4bcb78</web_service_definition>
+    </sys_ws_query_parameter>
+</record_update>

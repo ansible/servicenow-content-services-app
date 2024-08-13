@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_page">
+    <sys_ui_page action="INSERT_OR_UPDATE">
+        <category>homepages</category>
+        <client_script/>
+        <description>Contact Red Hat</description>
+        <direct>false</direct>
+        <endpoint>x_rhtpp_ansible_contact_red_hat.do</endpoint>
+        <html><![CDATA[<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
+	<div class="container">
+		<h1>Contacting Red Hat</h1>
+		<br/>
+		<p>
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="https://access.redhat.com/support/contact/Sales/">Enterprise or Corporate Sales Inquiries</a></h4>
+			Purchase Red Hat products or ask about Red Hat products and services.<br/>
+
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="https://access.redhat.com/support/contact/customerService/">Customer Service</a></h4>
+			Get help with your subscription, Red Hat registration, or access to Red Hat services.<br/>
+
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="https://access.redhat.com/support/contact/technicalSupport/">Technical Support</a></h4>
+			Get help with Red Hat products.<br/>
+
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="http://www.redhat.com/en/services/training/global-contacts">Training &amp; Certifications</a></h4>
+			Global contacts for Red Hat Training &amp; Certifications sales and service.<br/>
+
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="https://access.redhat.com/security/team/contact/">Security Contacts</a></h4>
+			Report a security vulnerability in any Red Hat product or service.<br/>
+
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="http://redhat.com/en/about/product-contact">Product Questions &amp; Suggestions</a></h4>
+			Provide feedback or ask a question about a Red Hat product.<br/>
+
+			<h4><a rel="noopener noreferrer nofollow" target="_blank" href="http://www.redhat.com/about/company/offices.html">Worldwide Offices</a></h4>
+			Address and contact info for regional Red Hat offices<br/>
+		</p>
+	</div>
+</j:jelly>]]></html>
+        <name>contact_red_hat</name>
+        <processing_script/>
+        <sys_class_name>sys_ui_page</sys_class_name>
+        <sys_created_by>jure</sys_created_by>
+        <sys_created_on>2022-09-01 09:31:07</sys_created_on>
+        <sys_id>12d065ef1be19550b76a0d0fdc4bcba1</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>contact_red_hat</sys_name>
+        <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
+        <sys_update_name>sys_ui_page_12d065ef1be19550b76a0d0fdc4bcba1</sys_update_name>
+        <sys_updated_by>jure</sys_updated_by>
+        <sys_updated_on>2022-09-02 13:14:00</sys_updated_on>
+    </sys_ui_page>
+</record_update>
