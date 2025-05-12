@@ -9,16 +9,15 @@
         <name>update</name>
         <operation_script><![CDATA[function getProblem(problem_number) {
     const problem = new GlideRecord("problem");
-    // Does a problem with the given number exist?
-    const problem_exists = problem.get("number", problem_number);
 
-    if (!problem_exists) {
-        // exception: no such problem
+    if (problem.get("number", problem_number)) {
+		return problem;
+    } else {
+		// exception: no such problem
         var msg = gs.getMessage("No problem with number {0} exists.", problem_number);
         gs.error(msg);
         throw new sn_ws_err.NotFoundError(msg);
-    }
-    return problem;
+	}
 }
 
 function validateProblem(problem) {
@@ -381,14 +380,14 @@ function buildResponse(problem, query_params) {
         <sys_created_by>jure</sys_created_by>
         <sys_created_on>2022-06-16 05:15:29</sys_created_on>
         <sys_id>3fe3c47a1bcc5510b76a0d0fdc4bcbbb</sys_id>
-        <sys_mod_count>14</sys_mod_count>
+        <sys_mod_count>15</sys_mod_count>
         <sys_name>update</sys_name>
         <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
         <sys_policy/>
         <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
         <sys_update_name>sys_ws_operation_3fe3c47a1bcc5510b76a0d0fdc4bcbbb</sys_update_name>
-        <sys_updated_by>jure</sys_updated_by>
-        <sys_updated_on>2022-09-05 14:00:30</sys_updated_on>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-05-12 18:12:26</sys_updated_on>
         <web_service_definition display_value="problem">2483807a1bcc5510b76a0d0fdc4bcb78</web_service_definition>
         <web_service_version/>
     </sys_ws_operation>
