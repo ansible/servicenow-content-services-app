@@ -164,28 +164,21 @@ function validateMandatoryFields(problem, current_state, new_state, body_data) {
 
 function checkAssignee(assigned_to) {
 	var user = new GlideRecord("sys_user");
-	var user_exists = user.get("sys_id", assigned_to);
-	if (! user_exists) {
-		user_exists = user.get("user_name", assigned_to);
-		if (! user_exists) {
-			var msg = gs.getMessage("No assignee found with sys_id or user_name matching {0}.", assigned_to);
-			gs.error(msg);
-			throw new sn_ws_err.NotFoundError(msg);
-		}
-	}
-	return user.getValue("sys_id");
+	if (user.get("sys_id", assigned_to) || user.get("user_name", assigned_to)) {
+		return user.getValue("sys_id");
+	} else {
+		var msg = gs.getMessage("No assignee found with sys_id or user_name matching {0}.", assigned_to);
+		gs.error(msg);
+		throw new sn_ws_err.NotFoundError(msg);
+	}	
 }
 
 function checkDuplicate(duplicate_of, problem) {
 	var duplicate = new GlideRecord("problem");
-	var duplicate_exists = duplicate.get("sys_id", duplicate_of);
-	if (! duplicate_exists) {
-		duplicate_exists = duplicate.get("number", duplicate_of);
-		if (! duplicate_exists) {
-			var msg = gs.getMessage("No problem found with sys_id or number {0} for field duplicate_of.", duplicate_of);
-			gs.error(msg);
-			throw new sn_ws_err.NotFoundError(msg);
-		}
+	if ((!duplicate.get("sys_id", duplicate_of)) && (!duplicate.get("number", duplicate_of))) {
+		var msg = gs.getMessage("No problem found with sys_id or number {0} for field duplicate_of.", duplicate_of);
+		gs.error(msg);
+		throw new sn_ws_err.NotFoundError(msg);
 	}
 	
 	if (duplicate.getValue("sys_id") == problem.getValue("sys_id")) {
@@ -380,14 +373,14 @@ function buildResponse(problem, query_params) {
         <sys_created_by>jure</sys_created_by>
         <sys_created_on>2022-06-16 05:15:29</sys_created_on>
         <sys_id>3fe3c47a1bcc5510b76a0d0fdc4bcbbb</sys_id>
-        <sys_mod_count>15</sys_mod_count>
+        <sys_mod_count>16</sys_mod_count>
         <sys_name>update</sys_name>
         <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
         <sys_policy/>
         <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
         <sys_update_name>sys_ws_operation_3fe3c47a1bcc5510b76a0d0fdc4bcbbb</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-05-12 18:12:26</sys_updated_on>
+        <sys_updated_on>2025-05-12 18:19:45</sys_updated_on>
         <web_service_definition display_value="problem">2483807a1bcc5510b76a0d0fdc4bcb78</web_service_definition>
         <web_service_version/>
     </sys_ws_operation>
