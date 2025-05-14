@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="sys_app_module">
+    <sys_app_module action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <application display_value="Red Hat Problem API">f2b129231b259550b76a0d0fdc4bcbb4</application>
+        <assessment/>
+        <device_type/>
+        <filter/>
+        <hint>Privacy Policy</hint>
+        <homepage/>
+        <image/>
+        <link_type>DIRECT</link_type>
+        <map_page/>
+        <mobile_title>Privacy Policy</mobile_title>
+        <mobile_view_name>Mobile</mobile_view_name>
+        <name/>
+        <order/>
+        <override_menu_roles>false</override_menu_roles>
+        <query>x_rhtpp_ansible_privacy_policy.do</query>
+        <report/>
+        <require_confirmation>true</require_confirmation>
+        <roles>x_rhtpp_ansible.update_problem</roles>
+        <sys_class_name>sys_app_module</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-05-12 17:57:35</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>47c0b2dc33a1e210392d0e570e5c7bbb</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Privacy Policy</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="API for Red Hat Ansible Automation Platform Certified Content Collection" source="x_rhtpp_ansible">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="API for Red Hat Ansible Automation Platform Certified Content Collection">9b33c83a1bcc5510b76a0d0fdc4bcb21</sys_scope>
+        <sys_update_name>sys_app_module_47c0b2dc33a1e210392d0e570e5c7bbb</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-05-12 17:57:35</sys_updated_on>
+        <timeline_page/>
+        <title>Privacy Policy</title>
+        <uncancelable>false</uncancelable>
+        <view_name/>
+        <window_name>Privacy Policy</window_name>
+    </sys_app_module>
+</record_update>
