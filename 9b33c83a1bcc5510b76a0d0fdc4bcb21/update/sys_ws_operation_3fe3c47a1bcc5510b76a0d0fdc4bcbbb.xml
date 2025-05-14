@@ -11,9 +11,9 @@
     const problem = new GlideRecord("problem");
 
     if (problem.get("number", problem_number)) {
-		return problem;
+		    return problem;
     } else {
-		// exception: no such problem
+		    // exception: no such problem
         var msg = gs.getMessage("No problem with number {0} exists.", problem_number);
         gs.error(msg);
         throw new sn_ws_err.NotFoundError(msg);
